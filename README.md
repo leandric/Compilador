@@ -4,23 +4,23 @@
 
 Durante o curso foram apresentados os conceitos por trás dos compiladores, tais como:
 
-●Níveis de linguagens de programação;
-● Especificação de linguagens de programação;
-● Tipos de processadores de linguagens;
-● Técnicas de bootstrapping;
-● Fases e passos de compilação;
-● Análise léxica;
-● Parsing;
-● Árvores de sintaxe abstrata;
-● Análise de contexto (identificação e verificação de tipos);
-● Organização de tempo de execução:
-● Representação de dados;
-● Avaliação de expressões;
-● Alocação de memória;
-● Subprogramas;
-● Geração de código:
-● Constantes e variáveis;
-● Subprogramas; 
+* Níveis de linguagens de programação;
+* Especificação de linguagens de programação;
+* Tipos de processadores de linguagens;
+* Técnicas de bootstrapping;
+* Fases e passos de compilação;
+* Análise léxica;
+* Parsing;
+* Árvores de sintaxe abstrata;
+* Análise de contexto (identificação e verificação de tipos);
+* Organização de tempo de execução:
+* Representação de dados;
+* Avaliação de expressões;
+* Alocação de memória;
+* Subprogramas;
+* Geração de código:
+* Constantes e variáveis;
+* Subprogramas; 
 
 Devido a limitação de tempo da disciplina, o projeto da mesma se limitou ao desenvolvimento do <b>analidor Léxico e sintático</b>. Futuramento posso dar continuidade ao desenvolvimento com o analisador semantico e geração de codigo assembly para um microprocessaor como o ATmega320P (Arduino).
 
