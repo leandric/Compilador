@@ -292,7 +292,7 @@ Linha: 7 - atomo: FIM 	lexema: FIM	valor: 0	operador: --
 Linha: 7 - atomo: PONTO 	lexema: .	valor: 0	operador: --
 Linha: 7 - atomo: EOS 	lexema: 	valor: 0	operador: --
 ```
-# 2.3 - Automatos Finitos Deterministicos implementados durante odesenvolvimento
+# 2.3 - Automatos Finitos Deterministicos implementados durante o desenvolvimento
 
 ## 2.4 - Trata operadores relacionais e atribuição:
 <img src='img/oprelacional.png'>
