@@ -37,12 +37,6 @@ SENAO = 26
 VARIAVEIS = 27
 COMENTARIO = 28
 STRING = 29
-ATRIBU=30
-PONTO = 31 # .
-ABRE_PAR = 32 # (
-FECHA_PAR = 33 # )
-VIRGULA = 34 # ,
-PONTO_VIRGULA = 35 # ;
 
 # OPERADOR RELACIONAL
 MEI = 1000 # MENOR IGUAL (<=)
@@ -58,9 +52,11 @@ COMENT = 1009  #  /* COMENTARIOS */
 MULTIPLICACAO = 1010 # (*)
 ATRIBUICAO = 1011 # ATRIBUIR (<-)
 RESTO = 1012 # RESTO DA DIVISAO (%)
-
-
-
+VIRGULA = 1013 # ,
+PONTO_VIRGULA = 1014 # ;
+ABRE_PAR = 1015 # (
+FECHA_PAR = 1016 # )
+PONTO = 1017 # .
 E = 1018 # (&)
 OU = 1019 # ($)
 NEG = 1020 # (!)
@@ -68,8 +64,7 @@ NEG = 1020 # (!)
 tolken_msg = ['ERRO', 'IDENTIF', 'NUM_INT', 'NUM_REAL', 'EOS', 'RELOP', 'ADDOP', 'MULOP',
                 'ALGORITMO', 'ATE', 'CADEIA', 'CARACTER','ENQUANTO','ENTAO','FACA','FIM',
                 'FUNCAO','INICIO','INTEIRO','PARA','PASSO','PROCEDIMENTO','REAL','REF',
-                'RETORNE','SE','SENAO','VARIAVEIS', 'COMENTARIO', 'STRING','ATRIBUIÇÃO','PONTO','ABRE_PAR','FECHA_PAR',
-                'VIRGULA','PONTO_VIRGULA']
+                'RETORNE','SE','SENAO','VARIAVEIS', 'COMENTARIO', 'STRING']
 
 operador_msg ={
     DI:'DI',
@@ -285,7 +280,7 @@ class Analisador_Lexico:
 
             # estado 9
             elif estado ==9:
-                return Tolken(ATRIBU, lexema, 0, 0, self.nlinha)
+                return Tolken(RELOP, lexema, 0, ATRIBUICAO, self.nlinha)
 
     def tratar_operador_maior(self, c):
         lexema = c
@@ -382,22 +377,22 @@ class Analisador_Lexico:
             return self.tratar_operador_maior(c)
 
         elif c == '%':
-            return Tolken(MULOP, c, 0, RESTO, self.nlinha)
+            return Tolken(RELOP, c, 0, RESTO, self.nlinha)
         
         elif c == ',':
-            return Tolken(VIRGULA, c, 0, 0, self.nlinha)
+            return Tolken(RELOP, c, 0, VIRGULA, self.nlinha)
 
         elif c == ';':
-            return Tolken(PONTO_VIRGULA, c, 0, 0, self.nlinha)
+            return Tolken(RELOP, c, 0, PONTO_VIRGULA, self.nlinha)
 
         elif c == '(':
-            return Tolken(ABRE_PAR, c, 0, 0, self.nlinha)
+            return Tolken(RELOP, c, 0, ABRE_PAR, self.nlinha)
 
         elif c == ')':
-            return Tolken(FECHA_PAR, c, 0, 0, self.nlinha)
+            return Tolken(RELOP, c, 0, FECHA_PAR, self.nlinha)
 
         elif c == '.':
-            return Tolken(PONTO, c, 0, 0, self.nlinha)
+            return Tolken(RELOP, c, 0, PONTO, self.nlinha)
 
         elif c == '=':
             return Tolken(RELOP, c, 0, IG, self.nlinha)
@@ -419,8 +414,8 @@ class Analisador_Lexico:
 
 def ler_arquivo():
     '''Ler o arquivo passado no argumento'''
-    arquivo = 'ex01.ptl'
-    #arquivo = argv[1]
+    #arquivo = 'teste.txt'
+    arquivo = argv[1]
     with open(arquivo, 'r') as f:
         cadeia = f.read()
     return cadeia

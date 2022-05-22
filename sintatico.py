@@ -1,6 +1,21 @@
+'''
+Grupo:
+
+- Clarice Dantas    RA 1902815
+- Leandro Soares    RA 1901845
+- Rafael Gallo      RA 1901885
+- Rodrigo Santiago  RA 1902375
+- Yago Rodrigues    RA 1902362
+'''
+
 from ast import Lt
+#from ctypes.wintypes import INT
+from tokenize import String
 from typing import NamedTuple, Union
 from sys import argv
+from numpy import lookfor
+
+from zmq import SUB
 
 class ErroLexicoRxception(Exception):
     pass
@@ -416,32 +431,283 @@ class Analisador_Lexico:
 
         return tolken
 
+################################################################################################################### Fim do analisador lexico
+
+#variaveis globais
+i = 0
+lookahead = 0
+atributos_tolken = {}
+lexico = {}
+atributos_atomo = None
+
+def erro(atomo):
+    global atributos_tolken
+    global tolken_msg
+    print(f'erro de sintaxe linha: {atributos_tolken.linha}, era esperado tolken do tipo:{tolken_msg[atomo]}, foi recebido o tipo {tolken_msg[lookahead]}')
+    quit()
+    
+
+
+def consome(atomo):
+    global lookahead
+    global lexico
+    global atributos_tolken
+    if (atomo == lookahead):
+        if atomo != EOS:
+            atributos_tolken = lexico.proximo_tolken()
+            lookahead = atributos_tolken.tipo
+    else:
+        try:
+            raise
+        except Exception as e:
+            erro(atomo)
+            
+
+def TIPO_SIMPLES():
+    if lookahead == INTEIRO:
+        consome(INTEIRO)
+    elif lookahead == REAL:
+        consome(REAL)
+    elif lookahead == CARACTER:
+        consome(CARACTER)
+    elif lookahead == STRING:
+        consome(STRING)
+
+def SECAO_PARAMETROS():
+    if lookahead == INTEIRO:
+        TIPO_SIMPLES()
+        if lookahead == REF:
+            consome(REF)
+        LISTA_DE_INDENTIFICADORES()
+    elif lookahead == EOS:
+        consome(EOS)
+
+def PARAMETROS_FORMAIS():
+    consome(ABRE_PAR)
+    SECAO_PARAMETROS()
+    while lookahead == PONTO_VIRGULA or lookahead == INTEIRO or lookahead == EOS:
+        consome(PONTO_VIRGULA)
+        SECAO_PARAMETROS()
+    consome(FECHA_PAR)
+
+def DECLARA_FUNCAO():
+    consome(FUNCAO)
+    TIPO_SIMPLES()
+    consome(IDENTIFICADOR)
+    PARAMETROS_FORMAIS()
+    if lookahead ==VARIAVEIS:
+        DECLARA_VAR()
+    consome(INICIO)
+    COMANDO_COMPOSTO()
+    consome(FIM)
+    if lookahead == FUNCAO or lookahead == PROCEDIMENTO:
+        DECLARA_MOD()
+
+def DECLARA_PROCEDIMENTO():
+    consome(PROCEDIMENTO)
+    consome(IDENTIFICADOR)
+    PARAMETROS_FORMAIS()
+    if lookahead == VARIAVEIS:
+        DECLARA_VAR()
+    consome(INICIO)
+    COMANDO_COMPOSTO()
+    consome(FIM)
+    if lookahead == FUNCAO or lookahead == PROCEDIMENTO:
+        DECLARA_MOD()
+
+def DECLARA_MOD():
+    if lookahead == FUNCAO:
+        DECLARA_FUNCAO()
+    elif lookahead == PROCEDIMENTO:
+        DECLARA_PROCEDIMENTO()
+
+def TERMO_RELACIONAL():
+    TERMO()
+    while lookahead in [ADICAO, SUBTRACAO, IDENTIFICADOR]:
+        OPERADOR_ADICAO()
+        TERMO()
+
+def OPERADOR_RELACIONAL():
+    if lookahead == RELOP:
+        consome(RELOP)
+
+def FATOR():
+    if lookahead == IDENTIFICADOR:
+        consome(IDENTIFICADOR)
+        if lookahead == ABRE_PAR:
+            consome(ABRE_PAR)
+            LISTA_EXPRESSAO()
+            consome(FECHA_PAR)
+    elif lookahead == NUM_INT:
+        consome(NUM_INT)
+    elif lookahead == NUM_REAL:
+        consome(NUM_REAL)
+    elif lookahead == STRING:
+        consome(STRING)
+    elif lookahead == NEG:
+        consome(NEG)
+        FATOR()
+    elif lookahead == SUBTRACAO:
+        consome(SUBTRACAO)
+    elif lookahead == ABRE_PAR:
+        consome(ABRE_PAR)
+        EXPRESSAO()
+        consome(FECHA_PAR)
+
+def OPERADOR_MULTIPLICACAO():
+    if lookahead == MULOP:
+        consome(MULOP)
+
+def TERMO():
+    FATOR()
+    while lookahead == MULOP or lookahead == IDENTIFICADOR:
+        OPERADOR_MULTIPLICACAO()
+        FATOR()
+
+def OPERADOR_ADICAO():
+    if lookahead == ADDOP:
+        consome(ADDOP)
+
+def TERMO_RELACIONAL():
+    TERMO()
+    if lookahead == ADDOP or lookahead == IDENTIFICADOR:
+        OPERADOR_ADICAO()
+        TERMO()
+
+def EXPRESSAO_SIMPLES():
+    TERMO_RELACIONAL()
+    while lookahead == RELOP:
+        OPERADOR_RELACIONAL()
+        TERMO_RELACIONAL()
+
+def OPERADOR_LOGICO():
+    if lookahead == E:
+        consome(E)
+    elif lookahead == OU:
+        consome(OU)
+
+def EXPRESSAO():
+    EXPRESSAO_SIMPLES()
+    while lookahead == E:
+        OPERADOR_LOGICO()
+        EXPRESSAO_SIMPLES()
+
+def COMANDO_ATRIBUICAO():
+    consome(IDENTIFICADOR)
+    consome(ATRIBU)
+    EXPRESSAO()
+
+def LISTA_EXPRESSAO():
+    EXPRESSAO()
+    while lookahead == PONTO_VIRGULA:
+        consome(PONTO_VIRGULA)
+        EXPRESSAO()
+
+def CHAMADA_MODULO():
+    consome(IDENTIFICADOR)
+    if lookahead == ABRE_PAR:
+        consome(ABRE_PAR)
+        LISTA_EXPRESSAO()
+        consome(FECHA_PAR)
+
+def COMANDO_SE():
+    consome(SE)
+    EXPRESSAO()
+    consome(ENTAO)
+    COMANDO_COMPOSTO()
+    if lookahead == SENAO:
+        consome(SENAO)
+        COMANDO_COMPOSTO()
+    consome(FIM)
+    consome(SUBTRACAO)
+    consome(SE)
+    
+
+def COMANDO_ENQUANTO():
+    consome(ENQUANTO)
+    EXPRESSAO()
+    consome(FACA)
+    COMANDO_COMPOSTO()
+    consome(FIM)
+    consome(SUBTRACAO)
+    consome(ENQUANTO)
+
+def COMANDO_RETORNE():
+    consome(RETORNE)
+    EXPRESSAO()
+
+def COMANDO():
+    if lookahead == IDENTIFICADOR:
+        COMANDO_ATRIBUICAO()
+    elif lookahead == IDENTIFICADOR:
+        CHAMADA_MODULO()
+    elif lookahead == SE:
+        COMANDO_SE()
+    elif lookahead == ENQUANTO:
+        COMANDO_ENQUANTO()
+    elif lookahead == RETORNE:
+        COMANDO_RETORNE()
+
+def COMANDO_COMPOSTO():
+    COMANDO()
+    while lookahead == PONTO_VIRGULA:
+        consome(PONTO_VIRGULA)
+        COMANDO()
+
+def LISTA_DE_INDENTIFICADORES():
+    consome(IDENTIFICADOR)
+    while lookahead == VIRGULA:
+        consome(VIRGULA)
+        consome(IDENTIFICADOR)
+
+def DECLARA_VAR():
+    consome(VARIAVEIS)
+    TIPO_SIMPLES()
+    LISTA_DE_INDENTIFICADORES()
+    while lookahead == INTEIRO or lookahead == REAL or lookahead == CARACTER or lookahead == CADEIA:
+        TIPO_SIMPLES()
+        LISTA_DE_INDENTIFICADORES()
+
+def BLOCO():
+    global lookahead
+    if lookahead == VARIAVEIS:
+        DECLARA_VAR()
+    if lookahead == FUNCAO or lookahead ==PROCEDIMENTO:
+        DECLARA_MOD()
+    consome(INICIO)
+    COMANDO_COMPOSTO()
+    consome(FIM)
+    consome(PONTO)
+    
+def PROGRAMA():
+    global lookahead
+    consome(ALGORITMO)
+    consome(IDENTIFICADOR)
+    BLOCO()
+
+def sintatico():
+    global lookahead
+    global lexico
+    global atributos_tolken
+
+    atributos_tolken = lexico.proximo_tolken()
+    lookahead = atributos_tolken.tipo
+    PROGRAMA()
+    consome(EOS)
+    print('fim da analise sintatica')
 
 def ler_arquivo():
     '''Ler o arquivo passado no argumento'''
-    arquivo = 'ex01.ptl'
-    #arquivo = argv[1]
+    #arquivo = 'ex01.ptl'
+    arquivo = argv[1]
     with open(arquivo, 'r') as f:
         cadeia = f.read()
     return cadeia
 
 def main():
+    global lexico
     buffer = ler_arquivo()     # ler de um arquivo de entrada
     lexico = Analisador_Lexico(buffer)
-    atomo = lexico.proximo_tolken()
-
-    while (atomo.tipo != EOS and atomo.tipo != ERRO):
-        print(f"Linha: {atomo.linha}", end='')
-        print(f" - atomo: {tolken_msg[atomo.tipo]} ", end='')
-        print(f"\tlexema: {atomo.lexema}", end='')
-        print(f"\tvalor: {atomo.valor}", end='')
-        print(f"\toperador: {operador_msg[atomo.operador]}\n", end='')
-        atomo = lexico.proximo_tolken()
-
-    print(f"Linha: {atomo.linha}", end='')
-    print(f" - atomo: {tolken_msg[atomo.tipo]} ", end='')
-    print(f"\tlexema: {atomo.lexema}", end='')
-    print(f"\tvalor: {atomo.valor}", end='')
-    print(f"\toperador: {operador_msg[atomo.operador]}\n", end='')
+    sintatico()
 
 main()
